@@ -65,17 +65,18 @@ class sound_start_recording(item.item):
 		item.item.__init__(self, name, experiment, string)
 
 	
-	def _generate_suffix(self,path_to_file):		
+	def _generate_suffix(self,path_to_file):
+		
 		pattern = "_[0-9]+$"		
 		(filename,ext) = os.path.splitext(path_to_file)
-				
+		
 		# Keep increasing suffix number if file with the current suffix already exists
 		filename_exists = True
 		while filename_exists:
 			match = re.search(pattern, filename)						
-			if match:					
+			if match:	
 				no = int(filename[match.start()+1:])+1
-				filename = re.sub(pattern,"_"+str(no),filename)			
+				filename = re.sub(pattern,"_"+str(no),filename)	
 			else:			
 				filename = filename + "_1"
 			
@@ -87,6 +88,7 @@ class sound_start_recording(item.item):
 		
 		
 	def prepare(self):
+		
 		# Call parent functions.
 		item.item.prepare(self)
 		
@@ -120,9 +122,18 @@ class sound_start_recording(item.item):
 			# Check if user has saved the experiment and experiment_path variable exists.
 			if not self.exp.experiment_path:
 				raise exceptions.runtime_error("To record sound, you need to save the experiment first.")
+			
+			# If output file is subject nr, convert to actual subject nr
+			if(self.get("output_file") == "subject_nr"):
+				temp_out = "subject" + str(self.exp.subject_nr)
 
+				if (self.exp.get("count_new_sound_start_recording") == self.exp.get("count_new_sound_start_recording")):
+					temp_out = temp_out + "rec" + str(self.exp.get("count_new_sound_start_recording"))
+			else: 
+				temp_out = self.get("output_file")
+			
 			# Make output location relative to location of experiment
-			rel_loc = os.path.normpath(self.get("output_file"))
+			rel_loc = os.path.normpath(temp_out)
 			
 			if self.exp.experiment_path is None:
 				raise exceptions.runtime_error("Path to experiment not found. Please save the experiment to a file first")
@@ -140,9 +151,11 @@ class sound_start_recording(item.item):
 	
 			# Check for a subfolder (when it is specified) that it exists and if not, create it
 			if os.path.exists(os.path.dirname(output_file)):
-				if self.file_exists_action == "Append suffix to filename":
+				
+				if not self.file_exists_action == "Append suffix to filename":
 					# Search for underscore/number suffixes								
-					output_file = self._generate_suffix(output_file)										
+					output_file = self._generate_suffix(output_file)
+					#output_file = 'sound_' + str(var.subject_nr)			
 			else:
 				if os.path.dirname(rel_loc) != "":
 					try:				
@@ -259,5 +272,4 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 
 		# Return the _edit_widget
 		return self._edit_widget
-
 
